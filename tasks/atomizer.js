@@ -1,3 +1,5 @@
+/*jshint node: true */
+
 'use strict';
 
 var Atomizer = require('atomizer').atomizer;
@@ -13,7 +15,7 @@ module.exports = function (grunt) {
         }
 
         this.files.forEach(function (f) {
-            Atomizer(f.src, options, f.dest, done);
+            new Atomizer(f.src, options, f.dest, done);
         });
 
     });
