@@ -2,7 +2,7 @@
 
 'use strict';
 
-var Atomizer = require('atomizer').atomizer;
+var atomizer = require('atomizer').atomizer;
 
 module.exports = function (grunt) {
 
@@ -15,7 +15,7 @@ module.exports = function (grunt) {
         }
 
         this.files.forEach(function (f) {
-            new Atomizer(f.src, options, f.dest, done);
+            atomizer(f.src, options, f.dest, done);
         });
 
     });
