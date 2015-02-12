@@ -26,7 +26,7 @@
     "lint": "./node_modules/.bin/jshint tasks tests"
   },
   "dependencies": {
-    "atomizer": "git+ssh://git@github.com:yahoo/atomizer.git",
+    "atomizer": "~0.2.0",
     "grunt": "~0.4.5"
   },
   "keywords": [
