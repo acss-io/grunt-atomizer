@@ -26,13 +26,16 @@
     "lint": "grunt"
   },
   "dependencies": {
-    "atomizer": "~0.2.0",
-    "grunt": "~0.4.5"
+    "atomizer": "~0.2.0"
+  },
+  "peerDependencies": {
+    "grunt": ">=0.4.0"
   },
   "keywords": [
     "atomizer",
     "atomic",
     "grunt",
+    "gruntplugin",
     "grunt-atomic",
     "grunt-atomizer",
     "atomic-css"
