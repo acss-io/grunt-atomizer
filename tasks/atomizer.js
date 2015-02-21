@@ -12,6 +12,62 @@ var _ = require('lodash');
 
 module.exports = function (grunt) {
 
+    /**
+     * Get the unit of a length.
+     * @param  {string}  value The length to be parsed.
+     * @return {string|false}  The unit of the string or false if length is not a number.
+     */
+    function getUnit(value) {
+        if (isNaN(parseFloat(value, 10))) {
+            return false;
+        }
+        return value.replace(/^[\d\.\s]+/, '');
+    }
+
+    /**
+     * Tells wether a value is a length unit or not
+     * @param  {string}  value The value to be tested.
+     * @return {Boolean}
+     */
+    function isLength(value) {
+        return parseInt(value, 10) === 0 || (/^-?(?:\d+)?\.?\b\d+[a-z]+$/.test(value) && ['em', 'ex', 'ch', 'rem', 'vh', 'vw', 'vmin', 'vmax', 'px', 'mm', 'cm', 'in', 'pt', 'pc'].indexOf(getUnit(value)) >= 0);
+    }
+
+    /**
+     * Tells wether a value is a percentage or not
+     * @param  {string}  value The value to be tested.
+     * @return {Boolean}
+     */
+    function isPercentage(value) {
+        return /^-?(?:\d+)?\.?\b\d+%$/.test(value);
+    }
+
+    /**
+     * Tells wether a value is a hex value or not
+     * @param  {string}  value The value to be tested.
+     * @return {Boolean}
+     */
+    function isHex(value) {
+        return /^[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(value);
+    }
+
+    /**
+     * Tells wether a value is an integer or not
+     * @param  {string}  value The value to be tested.
+     * @return {Boolean}
+     */
+    function isInteger(value) {
+        return typeof value === 'number' && (value % 1) === 0;
+    }
+
+    /**
+     * Tells wether a value is a float or not
+     * @param  {string}  value The value to be tested.
+     * @return {Boolean}
+     */
+    function isFloat(value) {
+        return (!isNaN(value) && value.toString().indexOf('.') !== -1);
+    }
 
     /**
      * Look for atomic class names in text.
@@ -30,6 +86,63 @@ module.exports = function (grunt) {
     }
 
     /**
+     * Used to log warning messages about missing classes in the config
+     * @param  {string} className The missing class name.
+     * @param  {string} id        The id of the pattern.
+     * @param  {string} suffix    The suffix of the class.
+     * @void
+     */
+    function warnMissingClassInConfig(className, patternId, suffix) {
+        grunt.log.warn('Class `' + className + '` should be manually added to the config file:');
+        grunt.log.writeln('\'' + patternId + '\'' + ':' + '{');
+        grunt.log.writeln('    custom: [');
+        grunt.log.writeln('        {suffix: \'' + suffix + '\', values: [\'YOUR-CUSTOM-VALUE\']}');
+        grunt.log.writeln('    ]');
+        grunt.log.writeln('}');
+    }
+
+    /**
+     * Used by getConfigRule to handle custom config rules
+     * @param  {object} configRule    The config rule object being built.
+     * @param  {string} className     The class name of the custom class to be evaluated.
+     * @param  {object} pattern       The pattern that matches this class in atomic css.
+     * @param  {string} suffix        The suffix of the class.
+     * @param  {object} currentConfig The current config we have in grunt.
+     * @return {object}               The custom config rule.
+     */
+    function handleCustomConfigRule(configRule, className, pattern, suffix, currentConfig) {
+        var value;
+
+        if (pattern.allowSuffixToValue) {
+            if (!configRule[pattern.id].custom) {
+                configRule[pattern.id].custom = [];
+            }
+            if (!isPercentage(suffix) && !isLength(suffix) && !isHex(suffix) && !isInteger(suffix) && !isFloat(suffix)) {
+                grunt.log.warn('Class ' + className + ' cannot be automatically generated because it doesn\'t have a valid value: ' + suffix);
+                return false;
+            }
+            value = isHex(suffix) ? '#' + suffix : suffix;
+            configRule[pattern.id].custom.push({
+                suffix: suffix,
+                values: [value]
+            });
+        } else {
+            if (!currentConfig[pattern.id] || !currentConfig[pattern.id].custom) {
+                warnMissingClassInConfig(className, pattern.id, suffix);
+                return false;
+            }
+            currentConfig[pattern.id].custom.some(function (custom) {
+                if (custom.suffix !== suffix) {
+                    warnMissingClassInConfig(className, pattern.id, suffix);
+                    return true;
+                }
+            });
+        }
+
+        return configRule;
+    }
+
+    /**
      * Get an atomic config rule given an atomic class name
      * @param  {string} className     An atomic class name
      * @param  {object} currentConfig The current config.
@@ -40,13 +153,17 @@ module.exports = function (grunt) {
         var prefix = '.' + className.substring(0, sepIndex);
         var suffix = className.substring(sepIndex);
         var configRule = {};
+        var value;
 
         // iterate rules to find the pattern that the className belongs to
         rules.some(function (pattern) {
             var patternRulesLength = 0;
+
             // filter to the prefix we're looking for
             if (pattern.prefix === prefix) {
+                // set the id in the config rule
                 configRule[pattern.id] = {};
+
                 // if the pattern has rules, let's find the suffix
                 if (pattern.rules) {
                     patternRulesLength = pattern.rules.length;
@@ -58,72 +175,14 @@ module.exports = function (grunt) {
                         }
                         // it's a custom suffix
                         else if (patternRulesLength === index + 1) {
-                            if (pattern.allowSuffixToValue) {
-                                if (!configRule[pattern.id].custom) {
-                                    configRule[pattern.id].custom = [];
-                                }
-                                configRule[pattern.id].custom.push({
-                                    suffix: suffix,
-                                    values: [suffix]
-                                });
-                            } else {
-                                if (!currentConfig[pattern.id] || !currentConfig[pattern.id].custom) {
-                                    grunt.log.warn('Class `' + className + '` should be manually added to the config file:');
-                                    grunt.log.writeln('\'' + pattern.id + '\'' + ':' + '{');
-                                    grunt.log.writeln('    custom: [');
-                                    grunt.log.writeln('        {suffix: \'' + suffix + '\', values: [\'YOUR-CUSTOM-VALUE\']}');
-                                    grunt.log.writeln('    ]');
-                                    grunt.log.writeln('}');
-                                    return;
-                                }
-                                currentConfig[pattern.id].custom.some(function (custom) {
-                                    if (custom.suffix !== suffix) {
-                                        grunt.log.warn('Class `' + className + '` should be manually added to the config file:');
-                                        grunt.log.writeln('\'' + pattern.id + '\'' + ':' + '{');
-                                        grunt.log.writeln('    custom: [');
-                                        grunt.log.writeln('        {suffix: \'' + suffix + '\', values: [\'YOUR-CUSTOM-VALUE\']}');
-                                        grunt.log.writeln('    ]');
-                                        grunt.log.writeln('}');
-                                        return true;
-                                    }
-                                });
-                            }
+                            configRule = handleCustomConfigRule(configRule, className, pattern, suffix, currentConfig);
                             return true;
                         }
                     });
                 }
                 // no pattern.rules, then it's a custom suffix
                 else {
-                    if (!configRule[pattern.id].custom) {
-                        configRule[pattern.id].custom = [];
-                    }
-                    if (pattern.allowSuffixToValue) {
-                        configRule[pattern.id].custom.push({
-                            suffix: suffix,
-                            values: [suffix]
-                        });
-                    }  else {
-                        if (!currentConfig[pattern.id] || !currentConfig[pattern.id].custom) {
-                            grunt.log.warn('Class `' + className + '` should be manually added to the config file:');
-                            grunt.log.writeln('\'' + pattern.id + '\'' + ':' + '{');
-                            grunt.log.writeln('    custom: [');
-                            grunt.log.writeln('        {suffix: \'' + suffix + '\', values: [\'YOUR-CUSTOM-VALUE\']}');
-                            grunt.log.writeln('    ]');
-                            grunt.log.writeln('}');
-                            return;
-                        }
-                        currentConfig[pattern.id].custom.some(function (custom) {
-                            if (custom.suffix !== suffix) {
-                                grunt.log.warn('Class `' + className + '` should be manually added to the config file:');
-                                grunt.log.writeln('\'' + pattern.id + '\'' + ':' + '{');
-                                grunt.log.writeln('    custom: [');
-                                grunt.log.writeln('        {suffix: \'' + suffix + '\', values: [\'YOUR-CUSTOM-VALUE\']}');
-                                grunt.log.writeln('    ]');
-                                grunt.log.writeln('}');
-                                return true;
-                            }
-                        });
-                    }
+                    configRule = handleCustomConfigRule(configRule, className, pattern, suffix, currentConfig);
                 }
                 return true;
             }
@@ -146,6 +205,12 @@ module.exports = function (grunt) {
         return config;
     }
 
+    /**
+     * Validates an atomizer config file.
+     * @param  {object} config        The config file.
+     * @param  {string} configObjPath A string representing the config file object. Used to show the error message.
+     * @void
+     */
     function validateConfig(config, configObjPath) {
         if (grunt.util.kindOf(config) !== 'object') {            
             grunt.fail.warn('`' + configObjPath + '` must be an object.');
@@ -193,13 +258,13 @@ module.exports = function (grunt) {
 
             if (pattern.rules) {
                 pattern.rules.forEach(function (rule) {
-                    regexes.push(escapeRegExp(prefix.replace('.','') + rule.suffix) + '\\b');
+                    regexes.push(escapeRegExp(prefix + rule.suffix) + '\\b');
                 });
             } else {
                 // custom-only patterns with no rules
             }
             if (pattern.prefix) {
-                regexes.push(escapeRegExp(prefix) + '(?:neg)?[0-9]+(?:[a-zA-Z%]+)?');
+                regexes.push(escapeRegExp(prefix) + '(?:neg)?(?:[0-9]+(?:[a-zA-Z%]+)|[0-9a-f]{3}(?:[0-9a-f]{3})?)?');
             }
         });
         return new RegExp('(' + regexes.join('|') + ')', 'g');
