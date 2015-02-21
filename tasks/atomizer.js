@@ -57,7 +57,8 @@ module.exports = function (grunt) {
      * @return {Boolean}
      */
     function isInteger(value) {
-        return typeof value === 'number' && (value % 1) === 0;
+        value = parseInt(value, 10);
+        return !isNaN(value) && (value % 1) === 0;
     }
 
     /**
@@ -66,6 +67,7 @@ module.exports = function (grunt) {
      * @return {Boolean}
      */
     function isFloat(value) {
+        value = parseFloat(value, 10);
         return (!isNaN(value) && value.toString().indexOf('.') !== -1);
     }
 
@@ -117,6 +119,7 @@ module.exports = function (grunt) {
             if (!configRule[pattern.id].custom) {
                 configRule[pattern.id].custom = [];
             }
+
             if (!isPercentage(suffix) && !isLength(suffix) && !isHex(suffix) && !isInteger(suffix) && !isFloat(suffix)) {
                 grunt.log.warn('Class ' + className + ' cannot be automatically generated because it doesn\'t have a valid value: ' + suffix);
                 return false;
@@ -126,6 +129,7 @@ module.exports = function (grunt) {
                 suffix: suffix,
                 values: [value]
             });
+            grunt.log.writeln('Found ' + className + ', rule has been added.');
         } else {
             if (!currentConfig[pattern.id] || !currentConfig[pattern.id].custom) {
                 warnMissingClassInConfig(className, pattern.id, suffix);
@@ -153,7 +157,7 @@ module.exports = function (grunt) {
         var prefix = '.' + className.substring(0, sepIndex);
         var suffix = className.substring(sepIndex);
         var configRule = {};
-        var value;
+        var value;        
 
         // iterate rules to find the pattern that the className belongs to
         rules.some(function (pattern) {
@@ -264,7 +268,7 @@ module.exports = function (grunt) {
                 // custom-only patterns with no rules
             }
             if (pattern.prefix) {
-                regexes.push(escapeRegExp(prefix) + '(?:neg)?(?:[0-9]+(?:[a-zA-Z%]+)|[0-9a-f]{3}(?:[0-9a-f]{3})?)?');
+                regexes.push(escapeRegExp(prefix) + '(?:(?:neg)?[0-9]+(?:[a-zA-Z%]+)?|[0-9a-f]{3}(?:[0-9a-f]{3})?)');
             }
         });
         return new RegExp('(' + regexes.join('|') + ')', 'g');
