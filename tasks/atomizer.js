@@ -72,19 +72,18 @@ module.exports = function (grunt) {
     }
 
     /**
-     * Look for atomic class names in text.
+     * Look for atomic class names in text and add to class names object.
      * @param  {string} src The text to be parsed.
-     * @return {array}      An array of class names.
+     * @param  {regexp} atomicRegex The regular expression to find class names.
+     * @param  {object} classNamesObj The classNames object.
+     * @return {array} An array of class names.
      */
-    function findAtomicClasses(src) {
+    function findAtomicClasses(src, atomicRegex, classNamesObj) {
         var match = atomicRegex.exec(src);
-        var classNames = [];
         while (match !== null) {
-            grunt.verbose.writeln('Found atomic class: ' + match[0]);
-            classNames.push(match[0]);
+            classNamesObj[match[0]] = classNamesObj[match[0]] ? classNamesObj[match[0]] + 1 : 1;
             match = atomicRegex.exec(src);
         }
-        return classNames;
     }
 
     /**
@@ -129,7 +128,7 @@ module.exports = function (grunt) {
                 suffix: suffix,
                 values: [value]
             });
-            grunt.log.writeln('Found ' + className + ', rule has been added.');
+            grunt.log.writeln('Found `' + className + '`, rule has been added.');
         } else {
             if (!currentConfig[pattern.id] || !currentConfig[pattern.id].custom) {
                 warnMissingClassInConfig(className, pattern.id, suffix);
@@ -197,15 +196,22 @@ module.exports = function (grunt) {
 
     /**
      * Get config object given an array of atomic class names.
-     * @param  {array}  classNames      An array of atomic class names
+     * @param  {object} classNamesObj   The object of atomic class names.
      * @param  {object} currentConfig   The current config.
      * @return {object}                 The atomic config object.
      */
-    function getConfig(classNames, currentConfig) {
-        var config = {};
-        classNames.forEach(function (className) {
-            config = _.merge(config, getConfigRule(className, currentConfig));
-        });
+    function getConfig(classNamesObj, currentConfig) {
+        var config = {},
+            className,
+            occurrences;
+
+        for (className in classNamesObj) {
+            if (classNamesObj.hasOwnProperty(className)) {
+                occurrences = classNamesObj[className];
+                grunt.verbose.writeln('Found `' + className + '`, occurrences: ' + occurrences);
+                config = _.merge(config, getConfigRule(className, currentConfig));
+            }
+        }
         return config;
     }
 
@@ -308,21 +314,19 @@ module.exports = function (grunt) {
         }
 
         this.files.forEach(function (f) {
-            var allClassNames = [];
+            var classNamesObj = {};
             var config;
             var content;
 
             if (f.src) {
                 f.src.forEach(function (filePath) {
                     var src = grunt.file.read(filePath);
-                    allClassNames = allClassNames.concat(findAtomicClasses(src));
+                    findAtomicClasses(src, atomicRegex, classNamesObj);
                 });
-
-                allClassNames = _.uniq(allClassNames);
             }
 
             // get the config object given an array of atomic class names
-            config = getConfig(allClassNames, gruntConfig);
+            config = getConfig(classNamesObj, gruntConfig);
 
             // merge the config we have with the grunt config
             config = _.merge(config, gruntConfig);
