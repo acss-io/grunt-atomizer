@@ -98,8 +98,7 @@ module.exports = function (grunt) {
             if (f.src) {
                 var classNamesObj = {};
                 f.src.forEach(function (filePath) {
-                    var src = grunt.file.read(filePath);
-                    atomizer.parse(src, classNamesObj);
+                    atomizer.parse(grunt.file.read(filePath), classNamesObj);
                 });
 
                 // Logging
@@ -108,7 +107,7 @@ module.exports = function (grunt) {
                 }
 
                 // get the config object given an array of atomic class names
-                config = atomizer.getConfig(classNamesObj, gruntConfig);
+                config = atomizer.getConfig(_.keys(classNamesObj), gruntConfig);
             }
 
             // merge the config we have with the grunt config
