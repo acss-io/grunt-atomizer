@@ -107,7 +107,7 @@ module.exports = function (grunt) {
                 }
 
                 // get the config object given an array of atomic class names
-                config = atomizer.getConfig(_.keys(classNamesObj), gruntConfig);
+                config = atomizer.getConfig(_.keys(classNamesObj), gruntConfig, grunt.option.flags().indexOf('--verbose') > -1);
             }
 
             // merge the config we have with the grunt config
