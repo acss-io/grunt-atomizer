@@ -8,6 +8,7 @@
 var atomizer = require('atomizer');
 var path = require('path');
 var _ = require('lodash');
+var Locator = require('locator');
 
 module.exports = function (grunt) {
 
@@ -99,5 +100,49 @@ module.exports = function (grunt) {
         });
 
         done();
+    });
+
+    // atomizer-locator: Merge atomizer configs found by locator
+    grunt.registerTask('atomizer-locator', function () {
+        var cwd = process.cwd(),
+            resourceFile = path.join(cwd, 'build', 'resources.json'),
+            locator = new Locator({
+                applicationDirectory: cwd,
+                buildDirectory: path.resolve(cwd, 'build'),
+                exclude: ['build']
+            }),
+            locatorResources = [],
+            config,
+            outfile = './configs/atomizer.json';
+
+        // parse the bundles
+        var resources = locator.parseBundle(cwd);
+
+locator.listBundleNames().forEach(function (name) {
+     var bundle = locator.getBundle(name);
+     var ress = locator.getBundleResources(name, { /* whatever filter you have */});
+
+     console.log(ress);
+     // do whatever you need here, you have bundle, and ress[] to fully understand the structure
+});
+
+console.log(resources)
+        // get the bundles
+        // locatorResources = locator.getAllResources();
+        
+        // console.log(locatorResources);
+        if (locatorResources && locatorResources.atomizer) {
+            config = atomizer.mergeConfigs(
+                locatorResources.atomizer.map(function (lc) {
+                    return grunt.file.readJSON(lc.fullPath);
+                })
+            );
+        }
+
+        // write results to file
+        grunt.file.write(resourceFile, JSON.stringify(locatorResources, null, 4));
+
+        grunt.file.write(outfile, JSON.stringify(config, null, 4));
+        grunt.log.ok('Atomic config collection merged and written to ' + outfile);
     });
 };

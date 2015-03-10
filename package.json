@@ -27,10 +27,14 @@
   },
   "dependencies": {
     "atomizer": "^2.0.0-alpha",
-    "lodash": "^3.2.0"
+    "lodash": "^3.2.0",
+    "locator": "^1.1.1"
   },
   "peerDependencies": {
     "grunt": ">=0.4.0"
+  },
+  "locator": {
+    "rulesets": "locator/ruleset.js"
   },
   "keywords": [
     "atomizer",
