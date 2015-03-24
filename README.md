@@ -19,7 +19,7 @@ npm install grunt-atomizer --save-dev
 
 ### Options
 
-None of the options are required. Make sure you understand [atomic configs](https://github.com/yahoo/atomizer/blob/master/examples/example-config.js) to understand the config options below.
+None of the options are required. Make sure you understand [atomic configs](https://github.com/yahoo/atomizer/blob/master/examples/example-config.js) in order to properly use the config options below.
 
 #### options.config
 
