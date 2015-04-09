@@ -87,7 +87,7 @@ module.exports = function(grunt) {
                     configFile: 'test/fixtures/sample-config.js',
                     configOutput: 'tmp/configOutput.json',
                     config: {
-                        classNames: ['D-b']
+                        classNames: ['D(b)']
                     }
                 },
                 files: [
