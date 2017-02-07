@@ -51,10 +51,15 @@ module.exports = function (grunt) {
             options.require = grunt.file.expand(options.require);
         }
 
-        if (options.configFile && grunt.file.exists(options.configFile)) {
-            configFile = require(path.resolve(options.configFile));
-            validateConfig(configFile, 'options.configFile');
-            gruntConfig = _.clone(configFile, true);
+        if (options.configFile) {
+            var configFiles = Array.isArray(options.configFile) ? options.configFile : [options.configFile];
+            configFiles.forEach(function (f) {
+                if (grunt.file.exists(f)) {
+                    configFile = grunt.file.readJSON(f);
+                    validateConfig(configFile, f);
+                    gruntConfig = utils.mergeConfigs([gruntConfig, configFile]);
+                }
+            });
         }
 
         if (options.config) {
