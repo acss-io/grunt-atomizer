@@ -52,7 +52,7 @@ module.exports = function (grunt) {
         if (options.configFile && grunt.file.exists(options.configFile)) {
             configFile = require(path.resolve(options.configFile));
             validateConfig(configFile, 'options.configFile');
-            gruntConfig = _.cloneDeep(configFile, true);
+            gruntConfig = _.cloneDeep(configFile);
         }
 
         if (options.config) {
