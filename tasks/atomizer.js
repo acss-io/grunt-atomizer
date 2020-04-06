@@ -5,7 +5,6 @@
 
 'use strict';
 
-var Atomizer = require('atomizer');
 var path = require('path');
 var fs = require('fs');
 var _ = require('lodash');
@@ -40,7 +39,7 @@ module.exports = function (grunt) {
         var gruntConfig = {}; // the config if passed directly via the grunt task
         var configFile;
         var cacheFile = path.join('./.atomic-cache/', this.target || 'atomic');
-        var AtomizerClass = Atomizer;
+        var Atomizer = require('atomizer');
 
         if (options.rules && options.rules.length > 0) {
             options.rules = grunt.file.expand(options.rules);
@@ -78,10 +77,10 @@ module.exports = function (grunt) {
         }
 
         if (options.Atomizer) {
-            AtomizerClass = options.Atomizer;
+            Atomizer = options.Atomizer;
         }
 
-        var atomizer = new AtomizerClass({ verbose: (grunt.option.flags().indexOf('--verbose') > -1) });
+        var atomizer = new Atomizer({ verbose: (grunt.option.flags().indexOf('--verbose') > -1) });
 
         if (options.rules && options.rules.length > 0) {
             options.rules.forEach(function (ruleFile) {
