@@ -21,6 +21,10 @@ npm install grunt-atomizer --save-dev
 
 None of the options are required. Make sure you understand [atomic configs](https://github.com/acss-io/atomizer/blob/master/examples/example-config.js) in order to properly use the config options below.
 
+#### options.Atomizer
+
+The Atomizer class (or class which extends Atomizer) to be used when generating Atomic CSS.
+
 #### options.cache
 
 Caches the output of the task target by saving it to `.atomic-cache` at the root dir. False by default.
